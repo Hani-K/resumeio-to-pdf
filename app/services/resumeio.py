@@ -6,6 +6,7 @@ import pytesseract
 import requests
 from fastapi import HTTPException
 from PIL import Image
+from pypdf import PdfReader, PdfWriter
 
 from app.schemas.resumeio import Extension
 
@@ -28,8 +29,8 @@ class ResumeioDownloader:
     rendering_token: str
     extension: Extension = Extension.jpeg
     image_size: int = 2000
-    IMAGE_URL: str = (
-        "https://ssr.resume.tools/to-image/{rendering_token}-1.{extension}?cache={cache_date}&size={image_size}"
+    IMAGES_URL: str = (
+        "https://ssr.resume.tools/to-image/{rendering_token}-{page_id}.{extension}?cache={cache_date}&size={image_size}"
     )
 
     def __post_init__(self) -> None:
@@ -45,56 +46,48 @@ class ResumeioDownloader:
         bytes
             PDF representation of the resume.
         """
-        image = self.__download_image()
-        page_pdf = pytesseract.image_to_pdf_or_hocr(Image.open(image), extension="pdf", config="--dpi 300")
-        return page_pdf
+        images = self.__download_images()
+        pdf = PdfWriter()
+        for image in images:
+            page_pdf = pytesseract.image_to_pdf_or_hocr(Image.open(image), extension="pdf", config="--dpi 300")
+            pdf.add_page(PdfReader(io.BytesIO(page_pdf)).pages[0])
+        with io.BytesIO() as file:
+            pdf.write(file)
+            return file.getvalue()
 
-    def __download_image(self) -> io.BytesIO:
-        """Download the first page image of the resume.
-
-        Returns
-        -------
-        io.BytesIO
-            Image file.
-        """
-        image_url = self.IMAGE_URL.format(
-            rendering_token=self.rendering_token,
-            extension=self.extension.value,
-            cache_date=self.cache_date,
-            image_size=self.image_size,
-        )
-        response = self.__get(image_url)
-        return io.BytesIO(response.content)
-
-    def __get(self, url: str) -> requests.Response:
-        """Get a response from a URL.
-
-        Parameters
-        ----------
-        url : str
-            URL to get.
+    def __download_images(self) -> list[io.BytesIO]:
+        """Download all page images of the resume by probing until a non-200 response.
 
         Returns
         -------
-        requests.Response
-            Response object.
-
-        Raises
-        ------
-        HTTPException
-            If the response status code is not 200.
+        list[io.BytesIO]
+            List of image files, one per page.
         """
-        response = requests.get(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/136.0.0.0 Safari/537.36",
-            },
-        )
-        if response.status_code != 200:
+        images = []
+        page_id = 1
+        while True:
+            image_url = self.IMAGES_URL.format(
+                rendering_token=self.rendering_token,
+                page_id=page_id,
+                extension=self.extension.value,
+                cache_date=self.cache_date,
+                image_size=self.image_size,
+            )
+            response = requests.get(
+                image_url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/136.0.0.0 Safari/537.36",
+                },
+            )
+            if response.status_code != 200:
+                break
+            images.append(io.BytesIO(response.content))
+            page_id += 1
+        if not images:
             raise HTTPException(
-                status_code=response.status_code,
+                status_code=404,
                 detail=f"Unable to download resume (rendering token: {self.rendering_token})",
             )
-        return response
+        return images
