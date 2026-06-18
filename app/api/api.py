@@ -16,28 +16,33 @@ def download_resume(
     rendering_token: Annotated[str, Path(min_length=24, max_length=24, pattern="^[a-zA-Z0-9]{24}$")],
     image_size: Annotated[int, Query(gt=0, le=2000)] = 2000,
     extension: Annotated[Extension, Query()] = Extension.jpeg,
+    page: Annotated[int, Query(gt=0)] = 1,
 ):
     """
-    Download a resume from resume.io and return it as a PDF.
+    Download a single page of a resume from resume.io and return it as a PDF.
 
     Parameters
     ----------
     rendering_token : str
         Rendering Token of the resume to download.
     image_size : int, optional
-        Size of the images to download, by default 3000.
+        Size of the images to download, by default 2000.
     extension : Extension, optional
         Image extension to download, by default "jpeg".
+    page : int, optional
+        1-based page number to download, by default 1.
 
     Returns
     -------
     fastapi.responses.Response
         A PDF representation of the resume with appropriate headers for inline display.
     """
-    resumeio = ResumeioDownloader(rendering_token=rendering_token, image_size=image_size, extension=extension)
+    resumeio = ResumeioDownloader(
+        rendering_token=rendering_token, image_size=image_size, extension=extension, page=page
+    )
     return Response(
         resumeio.generate_pdf(),
-        headers={"Content-Disposition": f'inline; filename="{rendering_token}.pdf"'},
+        headers={"Content-Disposition": f'inline; filename="{rendering_token}-page-{page}.pdf"'},
     )
 
 

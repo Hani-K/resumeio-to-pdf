@@ -5,82 +5,124 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <title>Resume.io to PDF</title>
 
     <style>
-        body {
-            font-family: "Inter", sans-serif;
+        :root {
+            --ink: #1c1c1c;
+            --muted: #6b7280;
+            --line: #e5e7eb;
+            --bg: #f4f4f5;
+            --field: #fafafa;
+            --danger: #dc2626;
+            --radius: 14px;
         }
 
-        .container {
-            position: relative;
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            color: var(--ink);
+            background: radial-gradient(1200px 600px at 50% -10%, #ffffff 0%, var(--bg) 55%);
+        }
+
+        .page {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 3rem;
+            padding: 1.5rem;
+            gap: 1.5rem;
         }
 
-        .links {
-            position: absolute;
-            top: 0;
-            right: 0;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .title {
-            font-size: 3rem;
-        }
-
-        .resume_form {
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-            min-width: 30rem;
-            gap: 2rem;
-        }
-
-        .resume {
+        .card {
             width: 100%;
-            padding: 1rem;
-            border-radius: 4px;
-            border: 1px solid #666666;
+            max-width: 26rem;
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.18);
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--ink);
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .input {
+            width: 100%;
+            padding: 0.8rem 0.9rem;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            background: var(--field);
             font-family: "Inter", sans-serif;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            color: var(--ink);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--ink);
+            box-shadow: 0 0 0 3px rgba(28, 28, 28, 0.08);
+            background: #ffffff;
         }
 
         .btn {
             display: flex;
             justify-content: center;
             align-items: center;
-            border-radius: 4px;
+            gap: 0.5rem;
+            width: 100%;
+            height: 3.25rem;
+            margin-top: 1.5rem;
+            border-radius: 8px;
             border: none;
             font-size: 1rem;
+            font-weight: 500;
             font-family: "Inter", sans-serif;
-            background-color: #1c1c1c;
+            background-color: var(--ink);
             color: #ffffff;
             cursor: pointer;
-            width: 12rem;
-            height: 3.5rem;
+            transition: opacity 0.15s ease, transform 0.05s ease;
         }
 
-        #loader {
-            display: none;
-        }
+        .btn:hover { opacity: 0.9; }
+        .btn:active { transform: translateY(1px); }
+        .btn:disabled { opacity: 0.6; cursor: default; }
+
+        #loader { display: none; }
 
         .error {
-            margin-right: auto;
             display: none;
-            color: red;
-            font-size: 0.8rem;
+            color: var(--danger);
+            font-size: 0.75rem;
         }
 
-        .error-border {
-            border: 1px solid red;
+        .error-border { border-color: var(--danger) !important; }
+
+        .links {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            opacity: 0.85;
         }
 
         .spinner_V8m1 {
@@ -93,102 +135,93 @@
             animation: spinner_YpZS 1.5s ease-in-out infinite
         }
 
-        @keyframes spinner_zKoa {
-            100% {
-                transform: rotate(360deg)
-            }
-        }
+        @keyframes spinner_zKoa { 100% { transform: rotate(360deg) } }
 
         @keyframes spinner_YpZS {
-            0% {
-                stroke-dasharray: 0 150;
-                stroke-dashoffset: 0
-            }
-            47.5% {
-                stroke-dasharray: 42 150;
-                stroke-dashoffset: -16
-            }
-            95%, 100% {
-                stroke-dasharray: 42 150;
-                stroke-dashoffset: -59
-            }
+            0% { stroke-dasharray: 0 150; stroke-dashoffset: 0 }
+            47.5% { stroke-dasharray: 42 150; stroke-dashoffset: -16 }
+            95%, 100% { stroke-dasharray: 42 150; stroke-dashoffset: -59 }
         }
 
         @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
+            0% { transform: translate(1px, 1px); }
+            20% { transform: translate(-3px, 0px); }
+            40% { transform: translate(1px, -1px); }
+            60% { transform: translate(-3px, 1px); }
+            80% { transform: translate(-1px, -1px); }
+            100% { transform: translate(1px, -2px); }
         }
 
-        .shake {
-            animation: shake 0.1s;
-            animation-iteration-count: 1;
-        }
-
+        .shake { animation: shake 0.1s 1; }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="links">
-        <iframe  src="https://ghbtns.com/github-btn.html?user=felipeall&repo=resumeio-to-pdf&type=star&count=true&size=large" frameborder="0" scrolling="0" width="130" height="30" title="GitHub"></iframe>
-        <a href="https://www.buymeacoffee.com/felipeall" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 160px !important;" ></a>
-    </div>
-    <h1 class="title">Resume.io to PDF</h1>
-    <form method="post" class="resume_form" id="downloadForm">
-        <input type="text" class="resume" name="rendering_token" placeholder="Enter your resume `renderingToken`" aria-label="Id" maxlength="24">
-        <span class="error">Your resume `renderingToken` must be a 24-character alphanumeric string</span>
-        <button id="submit-btn" class="btn" type="submit"><span id="submit-text">Download</span>
-            <svg id="loader" width="23" height="23" stroke="#fff" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<div class="page">
+    <form method="post" class="card" id="downloadForm">
+        <div class="field">
+            <label class="label" for="rendering_token">Rendering token</label>
+            <input type="text" class="input" id="rendering_token" name="rendering_token"
+                   placeholder="24-character renderingToken" aria-label="Rendering token" maxlength="24" autocomplete="off">
+            <span class="hint">Find it in the resume.io editor URL.</span>
+            <span class="error" id="error">Must be a 24-character alphanumeric string.</span>
+        </div>
+
+        <div class="field">
+            <label class="label" for="page">Page to download</label>
+            <input type="number" class="input" id="page" name="page" value="1" min="1" step="1" aria-label="Page number">
+            <span class="hint">Each download is a single page — pick which one.</span>
+        </div>
+
+        <button id="submit-btn" class="btn" type="submit">
+            <span id="submit-text">Download page</span>
+            <svg id="loader" width="22" height="22" stroke="#fff" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <g class="spinner_V8m1">
                     <circle cx="12" cy="12" r="9.5" fill="none" stroke-width="3"></circle>
                 </g>
             </svg>
         </button>
     </form>
+
+    <div class="links">
+        <iframe src="https://ghbtns.com/github-btn.html?user=felipeall&repo=resumeio-to-pdf&type=star&count=true&size=large" frameborder="0" scrolling="0" width="130" height="30" title="GitHub"></iframe>
+        <a href="https://www.buymeacoffee.com/felipeall" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 36px !important;width: 144px !important;"></a>
+    </div>
 </div>
 
-
 <script>
-    window.addEventListener('pageshow', function() {
+    window.addEventListener('pageshow', function () {
         document.getElementById('loader').style.display = 'none';
         document.getElementById('submit-text').style.display = 'block';
+        document.getElementById('submit-btn').disabled = false;
     });
 
     const downloadForm = document.getElementById("downloadForm");
-    const errorMessage = document.querySelector('.error');
-    const inputField = document.querySelector('.resume');
+    const errorMessage = document.getElementById('error');
+    const tokenField = document.getElementById('rendering_token');
+    const pageField = document.getElementById('page');
 
     downloadForm.addEventListener("submit", function (e) {
         e.preventDefault();
-        const rendering_token = new FormData(downloadForm).get('rendering_token').toString();
+        const rendering_token = tokenField.value.trim();
         const regex = /^[a-zA-Z0-9]{24}$/;
 
         if (!regex.test(rendering_token)) {
             errorMessage.style.display = 'block';
-            inputField.classList.add('error-border');
-            inputField.classList.remove('shake');
-
-            setTimeout(function() {
-                inputField.classList.add('shake');
-            }, 100);
-
+            tokenField.classList.add('error-border');
+            tokenField.classList.remove('shake');
+            setTimeout(function () { tokenField.classList.add('shake'); }, 100);
             return;
-        } else {
-            errorMessage.style.display = 'none';
-            inputField.classList.remove('error-border', 'shake');
         }
 
-        downloadForm.action = '/download/' + rendering_token;
+        errorMessage.style.display = 'none';
+        tokenField.classList.remove('error-border', 'shake');
+
+        const page = Math.max(1, parseInt(pageField.value, 10) || 1);
+
+        downloadForm.action = '/download/' + rendering_token + '?page=' + page;
         document.getElementById('submit-text').style.display = 'none';
         document.getElementById('loader').style.display = 'block';
+        document.getElementById('submit-btn').disabled = true;
         this.submit();
     });
 </script>
